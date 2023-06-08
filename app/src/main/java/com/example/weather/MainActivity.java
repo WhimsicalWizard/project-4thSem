@@ -29,7 +29,7 @@ import java.util.Locale;
 public class MainActivity extends AppCompatActivity {
     LocationManager locationManager;
     LocationListener locationListener;
-    private String apiKey = "9a8fc21a793ac7be98bfc2f385336e27";
+    private String apiKey = "your api key";
 
     private EditText inputText;
     double latitude;
