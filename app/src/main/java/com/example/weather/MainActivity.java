@@ -26,7 +26,7 @@ import java.util.Properties;
 
 public class MainActivity extends AppCompatActivity {
     LocationManager locationManager;
-    //     final String apiKey = "9a8fc21a793ac7be98bfc2f385336e27";
+
     public String apiKey;
     private EditText inputText;
     double latitude;
