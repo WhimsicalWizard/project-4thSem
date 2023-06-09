@@ -7,33 +7,33 @@
         android:layout_height="match_parent"
         android:background="@drawable/gradiant_bg"
         tools:context=".MainActivity">
-
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:id="@+id/linear"
-                  android:layout_marginTop="50dp" android:padding="4dp"
-    >
-    <EditText android:layout_width="250dp" android:layout_height="50dp"
-              android:id="@+id/city_input"
-              android:background="#33fe"
-              android:layout_margin="5dp"
-             />
-    <Button android:layout_width="wrap_content" android:layout_height="50dp"
-            android:id="@+id/search_button"
-            android:text="Continue"
-            android:layout_margin="5dp"
-          />
-    </LinearLayout>
+<RelativeLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+android:id="@+id/main_info">
     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-              android:id="@+id/city_out"
-android:layout_below="@id/linear"
-              android:layout_margin="50dp"
+              android:textSize="40dp"
+              android:text="City Name"
+              android:id="@+id/city_name"
+              android:layout_centerHorizontal="true"
+              android:layout_marginTop="30dp"
     />
- <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-           android:id="@+id/gps_out"
-           android:layout_margin="50dp"
-           android:textSize="25dp"
-           android:layout_below="@id/city_out"
-           android:layout_centerHorizontal="true"
-           android:text="Loading..."
-           />
+    <ImageView android:layout_width="match_parent" android:layout_height="wrap_content"
+               android:id="@+id/weather_icon"
+               android:src="@drawable/common_google_signin_btn_icon_dark_normal"
+               android:layout_below="@id/city_name"
+               android:layout_marginTop="15dp"
+    />
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+              android:textSize="25dp"
+              android:text="Weather"
+              android:layout_below="@id/weather_icon"
+              android:id="@+id/current_weather"
+              android:layout_centerHorizontal="true"
+              android:layout_marginTop="15dp"
+    />
+</RelativeLayout>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_below="@id/main_info">
+<TextView android:layout_width="match_parent" android:layout_height="match_parent"/>
+    </LinearLayout>
+
 </RelativeLayout>

@@ -1,44 +1,39 @@
 package com.example.weather;
 
 import android.Manifest;
-import android.content.Intent;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.*;
+import android.net.ConnectivityManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
-import androidx.annotation.UiThread;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
 import java.util.Locale;
+import java.util.Properties;
 
 public class MainActivity extends AppCompatActivity {
     LocationManager locationManager;
-    LocationListener locationListener;
-    private String apiKey = "your api key";
-
+    //     final String apiKey = "9a8fc21a793ac7be98bfc2f385336e27";
+    public String apiKey;
     private EditText inputText;
     double latitude;
     double longitude;
-    private Button search;
-
     final String[] PERMISSIONS = {Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION};
     final int all = 1;
-    private TextView cityTextView, gpsOutTextView;
+    private TextView placeName, gpsOutTextView;
 
 
     @Override
@@ -52,34 +47,47 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        cityTextView = findViewById(R.id.city_out);
+        placeName = findViewById(R.id.city_name);
+        gpsOutTextView = findViewById(R.id.current_weather);
 
-gpsOutTextView = findViewById(R.id.gps_out);
-        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            requestPermissions(PERMISSIONS, all);
-        } else {
-            requestLocation();
+        Properties properties = new Properties();
+
+        try {
+
+            InputStream inputStream = getAssets().open("config.properties");
+            properties.load(inputStream);
+            apiKey = properties.getProperty("API_KEY", "");
+            inputStream.close();
+        } catch (IOException e) {
+            Toast.makeText(this, String.valueOf(e), Toast.LENGTH_LONG).show();
+            e.printStackTrace();
         }
-        inputText = findViewById(R.id.city_input);
-        search = findViewById(R.id.search_button);
-        search.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String city = String.valueOf(inputText.getText());
-                if (!city.isEmpty()) {
-                    temperature(city);
-                } else {
-                    Toast.makeText(MainActivity.this, "Please enter a city name", Toast.LENGTH_SHORT).show();
-                }
+        if (!isNetworkConnected()) {
+            placeName.setText("Connect to Internet");
+        } else {
+            locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                requestPermissions(PERMISSIONS, all);
+            } else {
+                requestLocation();
+
 
             }
-        });
+        }
     }
 
+    private boolean isNetworkConnected() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        return cm.getActiveNetworkInfo() != null && cm.getActiveNetworkInfo().isConnected();
+
+    }
+
+
     private void requestLocation() {
+
 
         if (locationManager == null) {
             locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
@@ -96,13 +104,15 @@ gpsOutTextView = findViewById(R.id.gps_out);
                         latitude = location.getLatitude();
                         longitude = location.getLongitude();
 
-
                         getTemperature(latitude, longitude);
 
 
                     }
                 });
             }
+        } else {
+                gpsOutTextView.setText("Turn on the Location");
+
         }
         if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
@@ -123,48 +133,10 @@ gpsOutTextView = findViewById(R.id.gps_out);
                 });
             }
         }
-    }
+        else {
+            gpsOutTextView.setText("Turn on the Location");
 
-    public void temperature(String city) {
-        String urlString = "https://api.openweathermap.org/data/2.5/weather?q=" +
-                city + "&units=metric&appid=" + apiKey;
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-
-
-                    //create connection to api
-                    URL url = new URL(urlString);
-                    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-
-                    //send get request
-                    connection.setRequestMethod("GET");
-
-                    //read response
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                    String response = reader.readLine();
-                    reader.close();
-
-
-                    JSONObject obj = new JSONObject(response);
-                    JSONObject main = obj.getJSONObject("main");
-                    JSONObject wind = obj.getJSONObject("wind");
-
-
-                    double temperature = main.getDouble("temp");
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            cityTextView.setText(String.valueOf(temperature) + "C");
-                        }
-                    });
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-        thread.start();
+        }
     }
 
 
@@ -172,11 +144,16 @@ gpsOutTextView = findViewById(R.id.gps_out);
         String urlString = "https://api.openweathermap.org/data/2.5/weather?units=metric&lat=" +
                 latitude + "&lon=" + longitude + "&appid=" + apiKey;
 
-
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
+
+                    //convert coordinate into address
+                    Geocoder geocoder = new Geocoder(MainActivity.this, Locale.getDefault());
+                    List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
+                    String cityName = addresses.get(0).getLocality();
+                    String countryName = addresses.get(0).getCountryName();
                     URL url = new URL(urlString);
                     HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                     connection.setRequestMethod("GET");
@@ -192,15 +169,16 @@ gpsOutTextView = findViewById(R.id.gps_out);
                     JSONObject obj = new JSONObject(response.toString());
                     JSONObject main = obj.getJSONObject("main");
                     double temperature = main.getDouble("temp");
-runOnUiThread(new Runnable() {
-    @Override
-    public void run() {
-        gpsOutTextView.setText(String.valueOf(temperature) + "C");
-    }
-});
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+
+                            placeName.setText(cityName + ", " + countryName);
+                            gpsOutTextView.setText(String.valueOf(temperature) + "C");
+                        }
+                    });
 
                 } catch (Exception e) {
-                    e.printStackTrace();
                 }
             }
         });
